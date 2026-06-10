@@ -1,0 +1,513 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TableStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+}
+
+enum ReservationStatus {
+  RESERVED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+}
+
+enum SaleStatus {
+  PAID
+  HELD
+  VOIDED
+  REFUNDED
+}
+
+enum OrderStation {
+  KITCHEN
+  BAR
+}
+
+enum OrderStatus {
+  PENDING
+  COOKING
+  READY
+  SERVED
+}
+
+enum PurchaseStatus {
+  DRAFT
+  RECEIVED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  LOW_STOCK
+  NEGATIVE_STOCK
+  LARGE_DISCOUNT
+  REFUND
+  VOID
+  SYSTEM
+  TRANSFER
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  users       User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id    Int              @id @default(autoincrement())
+  key   String           @unique
+  name  String
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  @@id([roleId, permissionId])
+}
+
+model Branch {
+  id             Int                    @id @default(autoincrement())
+  code           String                 @unique
+  name           String
+  address        String
+  phone          String?
+  timezone       String                 @default("Asia/Yangon")
+  isActive       Boolean                @default(true)
+  users          User[]
+  inventories    BranchInventory[]
+  tables         DiningTable[]
+  sales          Sale[]
+  expenses       Expense[]
+  incomes        Income[]
+  purchases      PurchaseOrder[]
+  closings       DailyClosing[]
+  shifts         ShiftClosing[]
+  transfersFrom  BranchStockTransfer[]  @relation("TransferFrom")
+  transfersTo    BranchStockTransfer[]  @relation("TransferTo")
+  settings       Setting[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  branchId     Int?
+  roleId       Int
+  username     String      @unique
+  name         String
+  email        String?     @unique
+  passwordHash String
+  pinHash      String?
+  status       UserStatus  @default(ACTIVE)
+  lastLoginAt  DateTime?
+  branch       Branch?     @relation(fields: [branchId], references: [id])
+  role         Role        @relation(fields: [roleId], references: [id])
+  sales        Sale[]
+  expenses     Expense[]
+  incomes      Income[]
+  purchases    PurchaseOrder[]
+  closings     DailyClosing[]
+  shifts       ShiftClosing[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  @@index([branchId, status])
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  station   OrderStation
+  sortOrder Int       @default(0)
+  products  Product[]
+}
+
+model Supplier {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  phone              String?
+  address            String?
+  email              String?
+  creditLimit        Decimal         @default(0)
+  outstandingBalance Decimal         @default(0)
+  products           Product[]
+  purchases          PurchaseOrder[]
+  payments           SupplierPayment[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  @@index([name])
+}
+
+model Product {
+  id             Int                    @id @default(autoincrement())
+  categoryId     Int
+  supplierId     Int?
+  sku            String                 @unique
+  barcode        String?                @unique
+  code           String                 @unique
+  name           String
+  unit           String
+  imageUrl       String?
+  purchasePrice  Decimal
+  sellingPrice   Decimal
+  minimumStock   Decimal                @default(0)
+  status         ProductStatus          @default(ACTIVE)
+  category       Category               @relation(fields: [categoryId], references: [id])
+  supplier       Supplier?              @relation(fields: [supplierId], references: [id])
+  inventories    BranchInventory[]
+  saleItems      SaleItem[]
+  purchaseItems  PurchaseItem[]
+  transactions   InventoryTransaction[]
+  transfers      BranchStockTransfer[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  @@index([categoryId, status])
+}
+
+model BranchInventory {
+  branchId   Int
+  productId  Int
+  stock      Decimal  @default(0)
+  averageCost Decimal @default(0)
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  updatedAt  DateTime @updatedAt
+  @@id([branchId, productId])
+  @@index([branchId, stock])
+}
+
+model InventoryTransaction {
+  id          Int      @id @default(autoincrement())
+  branchId    Int
+  productId   Int
+  type        String
+  quantity    Decimal
+  unitCost    Decimal  @default(0)
+  reference   String?
+  createdById Int?
+  product     Product  @relation(fields: [productId], references: [id])
+  createdAt   DateTime @default(now())
+  @@index([branchId, productId, createdAt])
+}
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  phone        String        @unique
+  name         String
+  birthday     DateTime?
+  membership   String        @default("Member")
+  vipLevel     String?
+  rewardPoints Int           @default(0)
+  sales        Sale[]
+  reservations Reservation[]
+  rewardLedger RewardPoint[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model RewardPoint {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  points     Int
+  reason     String
+  reference  String?
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  @@index([customerId, createdAt])
+}
+
+model DiningTable {
+  id           Int           @id @default(autoincrement())
+  branchId     Int
+  name         String
+  floor        String
+  seats        Int
+  x            Int           @default(0)
+  y            Int           @default(0)
+  status       TableStatus   @default(AVAILABLE)
+  branch       Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  sales        Sale[]
+  @@unique([branchId, name])
+  @@index([branchId, floor, status])
+}
+
+model Reservation {
+  id         Int               @id @default(autoincrement())
+  tableId    Int
+  customerId Int?
+  customerName String
+  phone      String
+  reservedAt DateTime
+  deposit    Decimal           @default(0)
+  status     ReservationStatus @default(RESERVED)
+  table      DiningTable       @relation(fields: [tableId], references: [id])
+  customer   Customer?         @relation(fields: [customerId], references: [id])
+  createdAt  DateTime          @default(now())
+  @@index([tableId, reservedAt, status])
+}
+
+model Sale {
+  id             Int          @id @default(autoincrement())
+  branchId       Int
+  cashierId      Int
+  customerId     Int?
+  tableId        Int?
+  invoiceNo      String       @unique
+  waiterName     String?
+  guestCount     Int          @default(1)
+  subtotal       Decimal
+  discountAmount Decimal      @default(0)
+  taxAmount      Decimal      @default(0)
+  serviceCharge  Decimal      @default(0)
+  grandTotal     Decimal
+  totalCost      Decimal
+  profit         Decimal
+  status         SaleStatus   @default(PAID)
+  branch         Branch       @relation(fields: [branchId], references: [id])
+  cashier        User         @relation(fields: [cashierId], references: [id])
+  customer       Customer?    @relation(fields: [customerId], references: [id])
+  table          DiningTable? @relation(fields: [tableId], references: [id])
+  items          SaleItem[]
+  payments       Payment[]
+  orderTickets   OrderTicket[]
+  soldAt         DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  @@index([branchId, soldAt, status])
+}
+
+model SaleItem {
+  id         Int      @id @default(autoincrement())
+  saleId     Int
+  productId  Int
+  note       String?
+  quantity   Decimal
+  unitPrice  Decimal
+  unitCost   Decimal
+  lineTotal  Decimal
+  lineProfit Decimal
+  sale       Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+  @@index([saleId])
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  method    String
+  amount    Decimal
+  reference String?
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([saleId])
+}
+
+model OrderTicket {
+  id        Int          @id @default(autoincrement())
+  saleId    Int
+  station   OrderStation
+  status    OrderStatus  @default(PENDING)
+  printedAt DateTime?
+  sale      Sale         @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  items     OrderTicketItem[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  @@index([station, status, createdAt])
+}
+
+model OrderTicketItem {
+  id        Int         @id @default(autoincrement())
+  ticketId  Int
+  saleItemId Int
+  name      String
+  quantity  Decimal
+  note      String?
+  ticket    OrderTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model PurchaseOrder {
+  id          Int            @id @default(autoincrement())
+  branchId    Int
+  supplierId  Int
+  createdById Int
+  poNumber    String         @unique
+  supplierInvoice String?
+  subtotal    Decimal
+  paidAmount  Decimal        @default(0)
+  status      PurchaseStatus @default(DRAFT)
+  branch      Branch         @relation(fields: [branchId], references: [id])
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  items       PurchaseItem[]
+  createdAt   DateTime       @default(now())
+  receivedAt  DateTime?
+  @@index([branchId, createdAt, status])
+}
+
+model PurchaseItem {
+  id          Int           @id @default(autoincrement())
+  purchaseId  Int
+  productId   Int
+  quantity    Decimal
+  unitCost    Decimal
+  lineTotal   Decimal
+  purchase    PurchaseOrder @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product     Product       @relation(fields: [productId], references: [id])
+}
+
+model SupplierPayment {
+  id         Int      @id @default(autoincrement())
+  supplierId Int
+  amount     Decimal
+  method     String
+  reference  String?
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  paidAt     DateTime @default(now())
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  branchId    Int
+  createdById Int
+  category    String
+  amount      Decimal
+  note        String?
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  spentAt     DateTime @default(now())
+  @@index([branchId, spentAt])
+}
+
+model Income {
+  id          Int      @id @default(autoincrement())
+  branchId    Int
+  createdById Int
+  category    String
+  amount      Decimal
+  note        String?
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  receivedAt  DateTime @default(now())
+  @@index([branchId, receivedAt])
+}
+
+model DailyClosing {
+  id           Int      @id @default(autoincrement())
+  branchId     Int
+  cashierId    Int
+  businessDate DateTime
+  openingCash  Decimal
+  cashSales    Decimal
+  digitalSales Decimal
+  expenses     Decimal
+  refunds      Decimal
+  expectedCash Decimal
+  actualCash   Decimal
+  difference   Decimal
+  branch       Branch   @relation(fields: [branchId], references: [id])
+  cashier      User     @relation(fields: [cashierId], references: [id])
+  closedAt     DateTime @default(now())
+  @@unique([branchId, cashierId, businessDate])
+}
+
+model ShiftClosing {
+  id          Int         @id @default(autoincrement())
+  branchId    Int
+  cashierId   Int
+  openingCash Decimal
+  closingCash Decimal?
+  status      ShiftStatus @default(OPEN)
+  branch      Branch      @relation(fields: [branchId], references: [id])
+  cashier     User        @relation(fields: [cashierId], references: [id])
+  openedAt    DateTime    @default(now())
+  closedAt    DateTime?
+  @@index([branchId, status, openedAt])
+}
+
+model BranchStockTransfer {
+  id           Int            @id @default(autoincrement())
+  fromBranchId Int
+  toBranchId   Int
+  productId    Int
+  quantity     Decimal
+  status       TransferStatus @default(PENDING)
+  fromBranch   Branch         @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch     Branch         @relation("TransferTo", fields: [toBranchId], references: [id])
+  product      Product        @relation(fields: [productId], references: [id])
+  createdAt    DateTime       @default(now())
+  completedAt  DateTime?
+  @@index([fromBranchId, toBranchId, status])
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  branchId  Int?
+  key       String
+  value     String
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  updatedAt DateTime @updatedAt
+  @@unique([branchId, key])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  branchId  Int?
+  userId    Int?
+  action    String
+  entity    String?
+  entityId  String?
+  detail    String?
+  ipAddress String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  @@index([branchId, userId, createdAt])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  branchId  Int?
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  branch    Branch?          @relation(fields: [branchId], references: [id])
+  createdAt DateTime         @default(now())
+  @@index([branchId, isRead, createdAt])
+}

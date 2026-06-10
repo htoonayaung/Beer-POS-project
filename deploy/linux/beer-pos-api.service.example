@@ -1,0 +1,20 @@
+[Unit]
+Description=Beer POS API
+After=network.target
+
+[Service]
+Type=simple
+User=beerpos
+Group=beerpos
+WorkingDirectory=/opt/beer-pos/backend/beer-pos-api
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/beer-pos/backend/beer-pos-api/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

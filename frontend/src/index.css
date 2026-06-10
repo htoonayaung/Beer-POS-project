@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #121212;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #121212;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-sm text-white outline-none transition placeholder:text-[#B0B0B0] focus:border-[#FFC107];
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-[#B0B0B0];
+  }
+
+  .icon-btn {
+    @apply inline-grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-white transition hover:border-[#FFC107] hover:text-[#FFC107];
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .danger-btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition;
+  }
+
+  .primary-btn {
+    @apply bg-[#FFC107] text-black hover:bg-[#FFB300];
+  }
+
+  .secondary-btn {
+    @apply border border-white/10 bg-white/[0.05] text-white hover:border-[#FFC107] hover:text-[#FFC107];
+  }
+
+  .danger-btn {
+    @apply border border-red-400/30 bg-red-500/10 text-red-200 hover:bg-red-500/20;
+  }
+
+  .nav-btn {
+    @apply flex h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-[#B0B0B0] transition hover:bg-white/[0.05] hover:text-white;
+  }
+
+  .nav-btn-active {
+    @apply bg-[#FFC107] text-black hover:bg-[#FFC107] hover:text-black;
+  }
+
+  .mobile-nav {
+    @apply flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] transition;
+  }
+
+  .metric {
+    @apply flex min-h-28 items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1E1E1E] p-4 shadow-xl shadow-black/20;
+  }
+
+  .metric p {
+    @apply text-sm text-[#B0B0B0];
+  }
+
+  .metric h3 {
+    @apply mt-1 break-words text-2xl font-semibold;
+  }
+
+  .toolbar {
+    @apply flex min-w-0 max-w-full flex-col gap-3 rounded-xl border border-white/10 bg-[#1E1E1E] p-3;
+  }
+
+  .searchbox {
+    @apply flex w-full items-center gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-[#B0B0B0] focus-within:border-[#FFC107];
+  }
+
+  .searchbox input {
+    @apply min-w-0 flex-1 bg-transparent py-1 text-sm text-white outline-none placeholder:text-[#B0B0B0];
+  }
+
+  .category-tabs {
+    @apply flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1;
+  }
+
+  .tab,
+  .tab-active {
+    @apply shrink-0 rounded-xl border px-3 py-2 text-sm transition;
+  }
+
+  .tab {
+    @apply border-white/10 bg-white/[0.04] text-[#B0B0B0];
+  }
+
+  .tab-active {
+    @apply border-[#FFC107] bg-[#FFC107] text-black;
+  }
+
+  .product-grid {
+    @apply grid min-w-0 max-w-full gap-3 sm:grid-cols-2 2xl:grid-cols-3;
+  }
+
+  .product-card {
+    @apply min-h-[246px] min-w-0 max-w-full overflow-hidden rounded-xl border border-white/10 bg-[#1E1E1E] shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:border-[#FFC107];
+  }
+
+  .product-card img {
+    @apply h-36 w-full object-cover;
+  }
+
+  .product-card h3 {
+    @apply min-h-12 text-base font-semibold leading-snug;
+  }
+
+  .stock-badge {
+    @apply shrink-0 rounded-full px-2 py-1 text-xs font-semibold;
+  }
+
+  .cart-panel {
+    @apply sticky top-24 min-w-0 max-w-full self-start rounded-xl border border-white/10 bg-[#1E1E1E] p-4 shadow-2xl shadow-black/30;
+  }
+
+  .qty-btn {
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#FFC107] font-bold text-black;
+  }
+
+  .data-table {
+    @apply w-full min-w-[760px] border-separate border-spacing-y-2 text-left text-sm;
+  }
+
+  .data-table th {
+    @apply px-3 py-2 text-xs uppercase tracking-wide text-[#B0B0B0];
+  }
+
+  .data-table td {
+    @apply bg-white/[0.035] px-3 py-3 align-top first:rounded-l-xl last:rounded-r-xl;
+  }
+
+  .data-table small {
+    @apply mt-1 block text-xs text-[#B0B0B0];
+  }
+
+  .receipt {
+    width: 80mm;
+    margin: 0 auto;
+    background: #fff;
+    color: #000;
+    padding: 10px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+  }
+
+  .receipt-58 {
+    width: 58mm;
+    font-size: 10px;
+  }
+
+  .receipt-80 {
+    width: 80mm;
+  }
+
+  .receipt-logo {
+    display: inline-grid;
+    height: 38px;
+    width: 38px;
+    place-items: center;
+    border: 2px solid #000;
+    border-radius: 50%;
+    font-weight: 700;
+  }
+
+  .receipt h2 {
+    margin: 6px 0 2px;
+    font-size: 16px;
+  }
+
+  .receipt p {
+    margin: 3px 0;
+  }
+
+  .receipt hr {
+    margin: 8px 0;
+    border: 0;
+    border-top: 1px dashed #000;
+  }
+
+  .receipt table {
+    width: 100%;
+  }
+
+  .receipt td:last-child {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .receipt-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 3px 0;
+  }
+
+  .receipt-line.total {
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 1279px) {
+  .cart-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric {
+    min-height: 96px;
+  }
+
+  .metric h3 {
+    font-size: 1.25rem;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .danger-btn {
+    width: 100%;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #receipt,
+  #receipt * {
+    visibility: visible !important;
+  }
+
+  #receipt {
+    position: fixed;
+    inset: 0 auto auto 0;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  @page {
+    size: auto;
+    margin: 0;
+  }
+}
