@@ -1,123 +1,88 @@
 # Beer POS Project
 
-Myanmar beer shop, bar, and restaurant POS with inventory management.
+Myanmar beer shop, bar, and restaurant POS system with inventory management.
 
-## Project folders
+## Architecture & Project Structure
+- `frontend` — React, TypeScript, TailwindCSS responsive POS application (Port `3000` internal)
+- `backend/beer-pos-api` — Express, Prisma ORM, SQLite enterprise API (Port `8080` internal)
+- `nginx.docker.conf` — Reverse proxy routing `/` to frontend and `/api/` to backend
+- `docker-compose.yml` — Multi-container orchestration with persistent SQLite volume
+- `database/beer_pos_schema.sql` — Legacy/reference SQL schema
+- `deploy/linux` — Sample bare-metal systemd service and Nginx configs
 
-- `frontend` - React, TypeScript, TailwindCSS, responsive POS application
-- `backend/beer-pos-api` - Express, Prisma, SQLite enterprise API
-- `database/beer_pos_schema.sql` - Legacy/reference SQL schema
+## Default Login Accounts
+- **Admin:** username `admin`, PIN `1111`
+- **Cashier:** username `cashier`, PIN `3333`
 
-## Start frontend
+> **Security Warning:** Change `JWT_SECRET` and all default credentials before deploying to a live production environment.
 
-```powershell
-.\start-frontend.ps1
-```
+---
 
-Frontend URL: `http://localhost:5173`
+## Method 1: Docker Compose Deployment (Recommended)
 
-## Start backend
+### Step 1: Check Prerequisites
+Ensure `git`, `docker`, and `docker compose` are installed on your Linux server:
 
-Open another PowerShell terminal:
+    git --version && docker --version && docker compose version
 
-```powershell
-.\start-backend.ps1
-```
+### Step 2: Clone the Repository
 
-Backend API: `http://localhost:8080/api`
+    mkdir -p ~/Projects && cd ~/Projects
+    git clone https://github.com/htoonayaung/Beer-POS-project.git
+    cd Beer-POS-project
 
-## Default API accounts
+### Step 3: Build and Start Containers
 
-- Admin: username `admin`, PIN `1111`
-- Cashier: username `cashier`, PIN `3333`
+    sudo docker compose up -d --build
 
-Change the JWT secret and all default credentials before production use.
+### Step 4: Verify Deployment
 
-## Linux quick start
+    sudo docker compose ps
+    sudo docker logs beer-pos-backend
+    curl -I http://localhost:8080
 
-Requirements:
+Open your browser and access: **`http://<SERVER_IP>:8080`**
 
-- Ubuntu/Debian or another modern Linux distribution
-- Node.js 20.19+ or 22.12+
-- npm
+### Step 5: Daily Operations & Maintenance
+| Action | Command |
+| :--- | :--- |
+| **Stop services (keep data)** | `sudo docker compose down` |
+| **Start services** | `sudo docker compose up -d` |
+| **Rebuild after code changes** | `sudo docker compose up -d --build` |
+| **View live backend logs** | `sudo docker logs -f beer-pos-backend` |
+| **Backup SQLite database** | `sudo docker cp beer-pos-backend:/app/data/beer_pos.db ./backup_beer_pos.db` |
+| **Full reset (delete data & images)** | `sudo docker compose down -v --rmi all` |
 
-After copying this folder to Linux:
+---
 
-```bash
-cd "/path/to/Beer POS Project"
-chmod +x install-linux.sh start-frontend.sh start-backend.sh
-./install-linux.sh
-```
+## Method 2: Manual Development Setup (Windows & Linux)
 
-Start the backend:
+### Windows Quick Start
+1. Start Backend (PowerShell Terminal 1): `.\start-backend.ps1` (API runs at `http://localhost:8080/api`)
+2. Start Frontend (PowerShell Terminal 2): `.\start-frontend.ps1` (UI runs at `http://localhost:5173`)
 
-```bash
-./start-backend.sh
-```
+### Linux Manual Quick Start
+Requires Node.js `20.19+` or `22.12+`:
 
-Open another terminal and start the frontend:
+    cd ~/Projects/Beer-POS-project
+    chmod +x install-linux.sh start-frontend.sh start-backend.sh
+    ./install-linux.sh
 
-```bash
-./start-frontend.sh
-```
+Run `./start-backend.sh` in Terminal 1 and `./start-frontend.sh` in Terminal 2, then open `http://<SERVER_IP>:5173`.
 
-Open:
+---
 
-```text
-http://SERVER_IP:5173
-```
+## Method 3: Bare-Metal Linux Production (Without Docker)
+1. Copy project files to `/opt/beer-pos/frontend` and `/opt/beer-pos/backend/beer-pos-api`.
+2. Run `./install-linux.sh`.
+3. Configure `backend/beer-pos-api/.env` with a strong `JWT_SECRET` and `CORS_ORIGIN`.
+4. Install the systemd service from `deploy/linux/beer-pos-api.service.example` to `/etc/systemd/system/beer-pos-api.service`:
 
-The copied Windows `node_modules` folders are not used as-is. `npm ci` installs
-Linux-compatible packages from the lock files.
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now beer-pos-api
+    sudo systemctl status beer-pos-api
 
-## Ubuntu/Debian Node.js example
+5. Configure Nginx using `deploy/linux/nginx-beer-pos.conf.example` (place in `/etc/nginx/sites-available/` on Ubuntu/Debian or `/etc/nginx/conf.d/` on Rocky Linux/RHEL), test, and reload:
 
-Install Node.js 20.19+ or 22.12+ using your approved package source. Confirm:
-
-```bash
-node --version
-npm --version
-```
-
-Do not continue with Node.js 20.18 or older. The included Vite version requires
-Node.js `20.19+` or `22.12+`.
-
-## Production deployment
-
-Recommended locations:
-
-```text
-/opt/beer-pos/frontend
-/opt/beer-pos/backend/beer-pos-api
-```
-
-1. Run `./install-linux.sh`.
-2. Edit `backend/beer-pos-api/.env`.
-3. Set a long random `JWT_SECRET`.
-4. Set `CORS_ORIGIN` to the real frontend URL, for example
-   `https://pos.example.com`.
-5. Copy `deploy/linux/beer-pos-api.service.example` to
-   `/etc/systemd/system/beer-pos-api.service`.
-6. Adjust the service paths and Linux user if necessary.
-7. Copy `deploy/linux/nginx-beer-pos.conf.example` to the Nginx sites folder.
-8. Replace `pos.example.com` with the real domain.
-9. Enable HTTPS before public use.
-
-Example service commands:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now beer-pos-api
-sudo systemctl status beer-pos-api
-```
-
-Example Nginx commands on Ubuntu/Debian:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/beer-pos /etc/nginx/sites-enabled/beer-pos
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-Only ports `80` and `443` should normally be public. Keep backend port `8080`
-bound behind Nginx/firewall where possible.
+    sudo nginx -t
+    sudo systemctl reload nginx
