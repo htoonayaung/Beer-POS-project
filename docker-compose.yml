@@ -1,0 +1,30 @@
+services:
+  backend:
+    build: ./backend/beer-pos-api
+    container_name: beer-pos-backend
+    environment:
+      DATABASE_URL: "file:/app/data/beer_pos.db"
+      PORT: 8080
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: beer-pos-frontend
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:alpine
+    container_name: beer-pos-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.docker.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
